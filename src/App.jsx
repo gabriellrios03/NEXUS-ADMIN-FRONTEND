@@ -681,6 +681,13 @@ function LoginPage({ email, setEmail, password, setPassword, showPassword, setSh
   )
 }
 
+/* ─── API config ─── */
+const API_BASE = 'https://nonmarrying-garish-tenisha.ngrok-free.app'
+const API_HEADERS = {
+  accept: '*/*',
+  'ngrok-skip-browser-warning': '1',
+}
+
 /* ─── Root App ─── */
 function App() {
     // Masters state
@@ -778,7 +785,7 @@ function App() {
       if (!token) { setUsersError('No hay token disponible. Inicia sesion de nuevo.'); return }
       setUsersLoading(true); setUsersError('')
       try {
-        const res = await fetch('http://localhost:3000/api/users', { headers: { accept: '*/*', Authorization: `Bearer ${token}` } })
+        const res = await fetch(`${API_BASE}/api/users`, { headers: { ...API_HEADERS, Authorization: `Bearer ${token}` } })
         const data = await res.json().catch(() => ([]))
         if (!res.ok) { setUsersError('No se pudieron cargar los usuarios.'); return }
         if (Array.isArray(data)) { setUsers(data); setUsersTotal(data.length); return }
@@ -793,7 +800,7 @@ function App() {
       const token = localStorage.getItem('auth_token')
       setAvailableRolesLoading(true); setAvailableRolesError('')
       try {
-        const res = await fetch('http://localhost:3000/api/roles', { headers: { accept: '*/*', ...(token ? { Authorization: `Bearer ${token}` } : {}) } })
+        const res = await fetch(`${API_BASE}/api/roles`, { headers: { ...API_HEADERS, ...(token ? { Authorization: `Bearer ${token}` } : {}) } })
         const data = await res.json().catch(() => ([]))
         if (!res.ok) { setAvailableRolesError('No se pudieron cargar los roles disponibles.'); return }
         if (Array.isArray(data)) { setAvailableRoles(data); return }
@@ -810,13 +817,13 @@ function App() {
   const handleSubmit = async (event) => {
     event.preventDefault(); setIsLoading(true); setMessage('')
     try {
-      const res = await fetch('http://localhost:3000/api/auth/login', { method: 'POST', headers: { accept: '*/*', 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
+      const res = await fetch(`${API_BASE}/api/auth/login`, { method: 'POST', headers: { ...API_HEADERS, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setMessage(data?.message || 'Credenciales invalidas o error del servidor.'); return }
       const token = data?.access_token || data?.token || ''
       if (token) localStorage.setItem('auth_token', token)
       setActiveSection('dashboard'); setIsAuthenticated(true)
-    } catch { setMessage('No se pudo conectar con la API en localhost:3000.') }
+    } catch { setMessage('No se pudo conectar con la API.') }
     finally { setIsLoading(false) }
   }
 
@@ -837,7 +844,7 @@ function App() {
     if (!token) { setRolesError('No hay token disponible. Inicia sesion de nuevo.'); return }
     setSelectedUserId(userId); setRolesLoading(true); setRolesError(''); setSelectedUserRoles([]); setRolesTotal(0)
     try {
-      const res = await fetch(`http://localhost:3000/api/roles/user/${userId}`, { headers: { accept: '*/*', Authorization: `Bearer ${token}` } })
+      const res = await fetch(`${API_BASE}/api/roles/user/${userId}`, { headers: { ...API_HEADERS, Authorization: `Bearer ${token}` } })
       const data = await res.json().catch(() => ([]))
       if (!res.ok) { setRolesError('No se pudieron cargar los roles del usuario.'); return }
       if (Array.isArray(data)) { setSelectedUserRoles(data); setRolesTotal(data.length); return }
@@ -854,13 +861,13 @@ function App() {
     if (!token) { setCreateUserMessage('No hay token disponible. Inicia sesion de nuevo.'); return }
     setCreateUserLoading(true); setCreateUserMessage('')
     try {
-      const res = await fetch('http://localhost:3000/api/auth/register', { method: 'POST', headers: { accept: '*/*', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ nombre: newUserNombre, email: newUserEmail, password: newUserPassword }) })
+      const res = await fetch(`${API_BASE}/api/auth/register`, { method: 'POST', headers: { ...API_HEADERS, 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ nombre: newUserNombre, email: newUserEmail, password: newUserPassword }) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setCreateUserMessage(data?.message || 'No se pudo crear el usuario.'); return }
       setCreateUserMessage('Usuario creado exitosamente.'); setNewUserNombre(''); setNewUserEmail(''); setNewUserPassword('')
       setUsersLoading(true); setUsersError('')
       try {
-        const ur = await fetch('http://localhost:3000/api/users', { headers: { accept: '*/*', Authorization: `Bearer ${token}` } })
+        const ur = await fetch(`${API_BASE}/api/users`, { headers: { ...API_HEADERS, Authorization: `Bearer ${token}` } })
         const ud = await ur.json().catch(() => ([]))
         if (!ur.ok) { setUsersError('No se pudieron actualizar los usuarios.'); return }
         if (Array.isArray(ud)) { setUsers(ud); setUsersTotal(ud.length); return }
@@ -878,7 +885,7 @@ function App() {
     if (!token) { setAssignRoleMessage('No hay token disponible. Inicia sesion de nuevo.'); return }
     setAssignRoleLoading(true); setAssignRoleMessage('')
     try {
-      const res = await fetch('http://localhost:3000/api/roles/assign', { method: 'POST', headers: { accept: '*/*', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ idUsuario: Number(assignIdUsuario), idRol: Number(assignIdRol), idMaster: Number(assignIdMaster), idEmpresaVendedora: Number(assignIdEmpresaVendedora) }) })
+      const res = await fetch(`${API_BASE}/api/roles/assign`, { method: 'POST', headers: { ...API_HEADERS, 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ idUsuario: Number(assignIdUsuario), idRol: Number(assignIdRol), idMaster: Number(assignIdMaster), idEmpresaVendedora: Number(assignIdEmpresaVendedora) }) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setAssignRoleMessage(data?.message || 'No se pudo asignar el rol.'); return }
       setAssignRoleMessage('Rol asignado exitosamente.')
