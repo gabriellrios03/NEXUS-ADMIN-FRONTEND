@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
-import { API_BASE, API_HEADERS, setToken, getToken } from '../api'
+import { API_BASE, API_HEADERS, setToken, getToken, setSession } from '../api'
 import { FormInput, Spinner, Toast, IconEye, IconBolt } from '../components/ui'
 
 export default function LoginPage() {
@@ -31,6 +31,7 @@ export default function LoginPage() {
       }
       const token = data?.access_token || data?.token || ''
       if (token) setToken(token)
+      setSession(data)
       navigate('/dashboard')
     } catch {
       setMessage('No se pudo conectar con la API en localhost:3000.')
