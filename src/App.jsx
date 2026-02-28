@@ -4,6 +4,7 @@ import LoginPage from './pages/Login'
 import DashboardPage from './pages/Dashboard'
 import UsersPage from './pages/Users'
 import MastersPage from './pages/Masters'
+import EmpresasPage from './pages/Empresas'
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/usuarios" element={<UsersPage />} />
           <Route path="/masters" element={<MastersPage />} />
+          <Route path="/empresas" element={<EmpresasPage />} />
         </Route>
 
         {/* Fallback */}

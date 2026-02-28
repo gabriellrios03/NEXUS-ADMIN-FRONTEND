@@ -1,11 +1,22 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { IconDashboard, IconUsers, IconShield, IconLogout, IconBolt } from './ui'
-import { clearToken } from '../api'
+
+function IconOfficeNav() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 21h18" />
+      <path d="M5 21V7l8-4v18" />
+      <path d="M19 21V11l-6-4" />
+      <path d="M9 9h.01M9 12h.01M9 15h.01M9 18h.01" />
+    </svg>
+  )
+}
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', Icon: IconDashboard },
   { to: '/usuarios', label: 'Usuarios', Icon: IconUsers },
   { to: '/masters', label: 'Masters', Icon: IconShield },
+  { to: '/empresas', label: 'Empresas', Icon: IconOfficeNav },
 ]
 
 export default function Sidebar() {
