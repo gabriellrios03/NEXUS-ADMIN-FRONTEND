@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { IconDashboard, IconUsers, IconShield, IconLogout, IconBolt } from './ui'
+import { clearToken, clearSession } from '../api'
 
 function IconOfficeNav() {
   return (
@@ -24,6 +25,7 @@ export default function Sidebar() {
 
   function handleLogout() {
     clearToken()
+    clearSession()
     navigate('/login')
   }
 
