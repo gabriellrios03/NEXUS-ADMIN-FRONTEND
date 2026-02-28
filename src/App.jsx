@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Select from './react-select'
 
 /* ─── Icon components ─── */
 function IconDashboard() {
@@ -156,6 +157,7 @@ function Sidebar({ activeSection, setActiveSection, onLogout }) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', Icon: IconDashboard },
     { id: 'usuarios', label: 'Usuarios', Icon: IconUsers },
+    { id: 'masters', label: 'Masters', Icon: IconShield },
   ]
 
   return (
@@ -392,16 +394,25 @@ function UsersSection({
           )}
           <form onSubmit={handleAssignRole}>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <FormInput
-                label="ID Usuario"
-                id="assign-usuario"
-                type="number"
-                min="1"
-                value={assignIdUsuario}
-                onChange={(e) => setAssignIdUsuario(e.target.value)}
-                placeholder="1"
-                required
-              />
+              <div>
+                <label htmlFor="assign-usuario" className="mb-1.5 block text-sm font-medium text-[#0f172a]">Usuario</label>
+                <Select
+                  inputId="assign-usuario"
+                  options={users.map((user, i) => ({
+                    value: user.Id ?? user.id ?? user._id,
+                    label: `${user.Nombre ?? user.nombre ?? user.name ?? 'Usuario'} - ${user.Email ?? user.email ?? ''}`
+                  }))}
+                  value={users.length > 0 ? users.map((user, i) => ({
+                    value: user.Id ?? user.id ?? user._id,
+                    label: `${user.Nombre ?? user.nombre ?? user.name ?? 'Usuario'} - ${user.Email ?? user.email ?? ''}`
+                  })).find(opt => String(opt.value) === String(assignIdUsuario)) : null}
+                  onChange={opt => setAssignIdUsuario(opt ? opt.value : '')}
+                  placeholder="Selecciona un usuario..."
+                  isClearable
+                  isSearchable
+                  styles={{ menu: base => ({ ...base, zIndex: 20 }) }}
+                />
+              </div>
               <div>
                 <label htmlFor="assign-rol" className="mb-1.5 block text-sm font-medium text-[#0f172a]">Rol</label>
                 <select
@@ -605,7 +616,7 @@ function LoginPage({ email, setEmail, password, setPassword, showPassword, setSh
           <h1 className="mt-4 text-2xl font-bold text-[#0f172a]">
             <span className="text-[#2563eb]">Nexus</span> Admin
           </h1>
-          <p className="mt-1 text-sm text-[#475569]">Inicia sesion para continuar</p>
+          <p className="mt-1 text-sm text-[#475569]">Inicia sesion para continuar a Montek Nexus</p>
         </div>
 
         {/* Card */}
@@ -672,6 +683,14 @@ function LoginPage({ email, setEmail, password, setPassword, showPassword, setSh
 
 /* ─── Root App ─── */
 function App() {
+    // Masters state
+    const [masters, setMasters] = useState([])
+    const [mastersTotal, setMastersTotal] = useState(0)
+    const [mastersLoading, setMastersLoading] = useState(false)
+    const [mastersError, setMastersError] = useState('')
+    const [newMasterNombre, setNewMasterNombre] = useState('')
+    const [createMasterLoading, setCreateMasterLoading] = useState(false)
+    const [createMasterMessage, setCreateMasterMessage] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(localStorage.getItem('auth_token')))
   const [activeSection, setActiveSection] = useState('dashboard')
   const [email, setEmail] = useState('')
@@ -704,6 +723,55 @@ function App() {
   const [selectedUserId, setSelectedUserId] = useState(null)
 
   useEffect(() => {
+        // Fetch masters
+        const fetchMasters = async () => {
+          if (!isAuthenticated || activeSection !== 'masters') return
+          const token = localStorage.getItem('auth_token')
+          if (!token) { setMastersError('No hay token disponible. Inicia sesion de nuevo.'); return }
+          setMastersLoading(true); setMastersError('')
+          try {
+            const res = await fetch('http://localhost:3000/api/masters', { headers: { accept: '*/*', Authorization: `Bearer ${token}` } })
+            const data = await res.json().catch(() => ([]))
+            if (!res.ok) { setMastersError('No se pudieron cargar los masters.'); return }
+            if (Array.isArray(data?.masters)) {
+              setMasters(data.masters);
+              setMastersTotal(Number(data?.total) || data.masters.length);
+              return;
+            }
+            if (Array.isArray(data)) {
+              setMasters(data);
+              setMastersTotal(data.length);
+              return;
+            }
+            setMasters([]); setMastersTotal(0)
+          } catch { setMastersError('Error de conexion al cargar masters.') }
+          finally { setMastersLoading(false) }
+        }
+        fetchMasters()
+      // Crear master
+      const handleCreateMaster = async (event) => {
+        event.preventDefault()
+        const token = localStorage.getItem('auth_token')
+        if (!token) { setCreateMasterMessage('No hay token disponible. Inicia sesion de nuevo.'); return }
+        setCreateMasterLoading(true); setCreateMasterMessage('')
+        try {
+          const res = await fetch('http://localhost:3000/api/masters', { method: 'POST', headers: { accept: '*/*', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ nombre: newMasterNombre }) })
+          const data = await res.json().catch(() => ({}))
+          if (!res.ok) { setCreateMasterMessage(data?.message || 'No se pudo crear el master.'); return }
+          setCreateMasterMessage('Master creado exitosamente.'); setNewMasterNombre('')
+          // Refrescar masters
+          setMastersLoading(true); setMastersError('')
+          try {
+            const res2 = await fetch('http://localhost:3000/api/masters', { headers: { accept: '*/*', Authorization: `Bearer ${token}` } })
+            const data2 = await res2.json().catch(() => ([]))
+            if (!res2.ok) { setMastersError('No se pudieron actualizar los masters.'); return }
+            if (Array.isArray(data2?.masters)) { setMasters(data2.masters); setMastersTotal(Number(data2?.total) || data2.masters.length); return }
+            setMasters([]); setMastersTotal(0)
+          } catch { setMastersError('Error de conexion al actualizar masters.') }
+          finally { setMastersLoading(false) }
+        } catch { setCreateMasterMessage('Error de conexion al crear el master.') }
+        finally { setCreateMasterLoading(false) }
+      }
     const fetchUsers = async () => {
       if (!isAuthenticated || activeSection !== 'usuarios') return
       const token = localStorage.getItem('auth_token')
@@ -838,6 +906,87 @@ function App() {
       <main className="flex-1 overflow-y-auto">
         {activeSection === 'dashboard' ? (
           <DashboardSection />
+        ) : activeSection === 'masters' ? (
+          <div className="p-8">
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#2563eb]">Administracion</p>
+                <h1 className="mt-1 text-2xl font-bold text-[#0f172a]">Masters</h1>
+                {!mastersLoading && !mastersError && (
+                  <p className="mt-1 text-sm text-[#475569]">{mastersTotal} master{mastersTotal !== 1 ? 's' : ''} registrado{mastersTotal !== 1 ? 's' : ''}</p>
+                )}
+              </div>
+            </div>
+            {/* Formulario alta master */}
+            <div className="mb-5 rounded-xl border border-[#e2e8f4] bg-white p-6">
+              <h2 className="mb-4 text-sm font-semibold text-[#0f172a]">Crear nuevo master</h2>
+              <form onSubmit={handleCreateMaster}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormInput
+                    label="Nombre"
+                    id="new-master-nombre"
+                    type="text"
+                    value={newMasterNombre}
+                    onChange={(e) => setNewMasterNombre(e.target.value)}
+                    placeholder="Nombre del master"
+                    required
+                  />
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <PrimaryButton type="submit" loading={createMasterLoading}>
+                    {createMasterLoading ? 'Creando...' : 'Crear master'}
+                  </PrimaryButton>
+                </div>
+                {createMasterMessage && (
+                  <div className="mt-3">
+                    <Toast message={createMasterMessage} type={createMasterMessage.toLowerCase().includes('exit') ? 'success' : 'error'} onClose={() => setCreateMasterMessage('')} />
+                  </div>
+                )}
+              </form>
+            </div>
+            {/* Tabla masters */}
+            <div className="rounded-xl border border-[#e2e8f4] bg-white overflow-hidden">
+              {mastersLoading && (
+                <div className="flex items-center justify-center gap-2 px-6 py-12 text-sm text-[#475569]">
+                  <Spinner /> Cargando masters...
+                </div>
+              )}
+              {mastersError && (
+                <div className="px-6 py-4">
+                  <Toast message={mastersError} type="error" onClose={() => {}} />
+                </div>
+              )}
+              {!mastersLoading && !mastersError && (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[#e2e8f4] bg-[#f7f9fd]">
+                        {['ID', 'Nombre'].map((h) => (
+                          <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#475569]">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#f1f5f9]">
+                      {masters.length === 0 ? (
+                        <tr>
+                          <td colSpan="2" className="px-4 py-12 text-center text-sm text-[#94a3b8]">
+                            Sin masters disponibles.
+                          </td>
+                        </tr>
+                      ) : (
+                        masters.map((master, i) => (
+                          <tr key={master.Id ?? i} className="transition hover:bg-[#f7f9fd]">
+                            <td className="px-4 py-3 font-mono text-xs text-[#475569]">{master.Id}</td>
+                            <td className="px-4 py-3 font-medium text-[#0f172a]">{master.Nombre}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
           <UsersSection
             users={users} usersTotal={usersTotal} usersLoading={usersLoading} usersError={usersError}
